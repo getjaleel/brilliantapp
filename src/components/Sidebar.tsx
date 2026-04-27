@@ -1,7 +1,7 @@
 import React from "react";
 import {
   LayoutDashboard,
-  FolderCan,
+  Folder,
   GitBranch,
   BrainCircuit,
   Library,
@@ -15,7 +15,7 @@ import Link from "next/link";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clients", href: "/clients", icon: FolderCan },
+  { name: "Clients", href: "/clients", icon: Folder },
   { name: "Projects", href: "/projects", icon: GitBranch },
   { name: "Engagement", href: "/engagement", icon: BrainCircuit },
   { name: "Knowledge", href: "/knowledge", icon: Library },
