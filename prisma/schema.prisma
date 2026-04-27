@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "file:/tmp/navigator_dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          String    @default("CONSULTANT")
+  organisationId String?
+  organisation  Organisation? @relation(fields: [organisationId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Organisation {
+  id      String @id @default(cuid())
+  name    String
+  users   User[]
+  clients Client[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id             String    @id @default(cuid())
+  name           String
+  industry       String?
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  projects       Project[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Project {
+  id                 String    @id @default(cuid())
+  name               String
+  clientId           String
+  client             Client    @relation(fields: [clientId], references: [id])
+  description        String?
+  businessDrivers    String?
+  scope              String?
+  constraints        String?
+  regulatoryEnv      String?
+  cloudProvider      String?
+  securityClass      String?
+  targetOutcomes     String?
+  status             String    @default("DISCOVERY")
+  aiEnabled          Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  phases             EngagementPhase[]
+  stakeholders       Stakeholder[]
+  conversations      AIConversation[]
+  artefacts          Artefact[]
+  risks              Risk[]
+  controls           Control[]
+  decisions          Decision[]
+  roadmapItems       RoadmapItem[]
+}
+
+model Stakeholder {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  name      String
+  role      String
+  influence String? // High, Medium, Low
+  interest  String? // High, Medium, Low
+  createdAt DateTime @default(now())
+}
+
+model EngagementPhase {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  name        String    // e.g., "Initial Discovery"
+  order       Int       // Sequence of phase
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  purpose     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tasks       PhaseTask[]
+}
+
+model PhaseTask {
+  id          String   @id @default(cuid())
+  phaseId     String
+  phase       EngagementPhase @relation(fields: [phaseId], references: [id])
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
+  category    String?   // "Question", "Input", "Output"
+  createdAt   DateTime  @default(now())
+}
+
+model KnowledgeItem {
+  id          String   @id @default(cuid())
+  domain      String   // TOGAF, AWS, Cyber, DevOps, DataGov
+  title       String
+  description String
+  usage       String?  // "When to use"
+  questions   String?  // "Questions to ask"
+  inputs      String?
+  outputs     String?
+  controls    String?  // Related controls
+  createdAt   DateTime @default(now())
+}
+
+model AIConversation {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id])
+  mode      String    // Discovery, Security, etc.
+  createdAt DateTime  @default(now())
+  messages  AIMessage[]
+}
+
+model AIMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id])
+  role           String         // 'user' or 'assistant'
+  content        String
+  createdAt      DateTime       @default(now())
+}
+
+model Artefact {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  name      String
+  type      String   // "Architecture Principles", "Risk Register", etc.
+  content   String
+  version    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Risk {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String
+  description String
+  impact      String    // High, Medium, Low
+  probability String    // High, Medium, Low
+  mitigation  String?
+  status      String    @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Control {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  name        String
+  framework   String    // ISM, PSPF, Essential Eight, etc.
+  requirement String
+  status      String    @default("NOT_APPLICABLE") // APPLICABLE, MET, NOT_MET
+  evidence    String?
+  owner       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Decision {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String
+  status      String   @default("PROPOSED") // PROPOSED, ACCEPTED, SUPERSEDED
+  context     String
+  decision    String
+  consequences String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RoadmapItem {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String
+  phase       String    // "Short term", "Medium term", etc.
+  priority    String    // High, Medium, Low
+  dependency  String?
+  createdAt   DateTime @default(now())
+}
