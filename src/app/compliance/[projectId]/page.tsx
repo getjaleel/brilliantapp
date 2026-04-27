@@ -11,7 +11,8 @@ import {
   Search,
   Filter,
   FileCheck,
-  ArrowRight
+  ArrowRight,
+  BrainCircuit
 } from "lucide-react";
 
 const prisma = new PrismaClient();
