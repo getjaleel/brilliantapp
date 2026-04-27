@@ -7,7 +7,7 @@ import {
   Library,
   FileText,
   ShieldCheck,
-  Roadmap,
+  Map,
   Settings,
   UserCircle
 } from "lucide-react";
@@ -21,7 +21,7 @@ const navigation = [
   { name: "Knowledge", href: "/knowledge", icon: Library },
   { name: "Artefacts", href: "/artefacts", icon: FileText },
   { name: "Compliance", href: "/compliance", icon: ShieldCheck },
-  { name: "Roadmap", href: "/roadmap", icon: Roadmap },
+  { name: "Roadmap", href: "/roadmap", icon: Map },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
