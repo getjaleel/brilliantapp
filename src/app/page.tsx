@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -9,11 +8,15 @@ import {
   BrainCircuit,
   GitBranch
 } from "lucide-react";
-
-const prisma = new PrismaClient();
+import { query } from "@/lib/db";
 
 export default async function Dashboard() {
-  const project = await prisma.project.findFirst();
+  const projectsResult = await query(
+    "SELECT * FROM \"Project\" LIMIT 1",
+    []
+  );
+
+  const project = projectsResult.rows[0];
 
   if (!project) {
     return (
@@ -24,18 +27,25 @@ export default async function Dashboard() {
     );
   }
 
-  const phases = await prisma.engagementPhase.findMany({
-    where: { projectId: project.id },
-    orderBy: { order: 'asc' }
-  });
-  const risks = await prisma.risk.findMany({
-    where: { projectId: project.id }
-  });
-  const controls = await prisma.control.findMany({
-    where: { projectId: project.id }
-  });
+  const phasesResult = await query(
+    "SELECT * FROM \"EngagementPhase\" WHERE \"projectId\" = $1 ORDER BY \"order\" ASC",
+    [project.id]
+  );
+  const phases = phasesResult.rows;
 
-  const completedPhases = phases.filter(p => p.status === 'COMPLETED').length;
+  const risksResult = await query(
+    "SELECT * FROM \"Risk\" WHERE \"projectId\" = $1",
+    [project.id]
+  );
+  const risks = risksResult.rows;
+
+  const controlsResult = await query(
+    "SELECT * FROM \"Control\" WHERE \"projectId\" = $1",
+    [project.id]
+  );
+  const controls = controlsResult.rows;
+
+  const completedPhases = phases.filter((p: any) => p.status === 'COMPLETED').length;
   const progress = phases.length > 0 ? (completedPhases / phases.length) * 100 : 0;
 
   return (
@@ -72,13 +82,13 @@ export default async function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Risks</CardTitle>
+           <CardTitle className="text-sm font-medium">Active Risks</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{risks.length}</div>
             <p className="text-xs text-slate-500 mt-2">
-              {risks.filter(r => r.impact === 'High' || r.impact === 'Critical').length} high impact risks
+              {risks.filter((r: any) => r.impact === 'High' || r.impact === 'Critical').length} high impact risks
             </p>
           </CardContent>
         </Card>
@@ -91,7 +101,7 @@ export default async function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{controls.length} Controls</div>
             <p className="text-xs text-slate-500 mt-2">
-              {controls.filter(c => c.status === 'MET').length} met / {controls.length} tracked
+              {controls.filter((c: any) => c.status === 'MET').length} met / {controls.length} tracked
             </p>
           </CardContent>
         </Card>
@@ -107,7 +117,7 @@ export default async function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {phases.map((phase) => (
+              {phases.map((phase: any) => (
                 <div key={phase.id} className="flex items-center gap-4 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
                   <div className={`w-3 h-3 rounded-full ${phase.status === 'COMPLETED' ? 'bg-green-500' : phase.status === 'IN_PROGRESS' ? 'bg-blue-500' : 'bg-slate-300'}`} />
                   <div className="flex-1">
