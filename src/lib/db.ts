@@ -1,42 +1,67 @@
-import { awsCredentialsProvider } from "@vercel/functions/oidc";
-import { Signer } from "@aws-sdk/rds-signer";
 import { Pool } from "pg";
+import { Signer } from "@aws-sdk/rds-signer";
+import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
-function env(key: string): string {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing environment variable: ${key}`);
-  return value;
+function parseDatabaseUrl(url: string) {
+  const parsed = new URL(url);
+  const sslMode = parsed.searchParams.get("sslmode");
+  return {
+    host: parsed.hostname,
+    port: Number(parsed.port) || 5432,
+    user: decodeURIComponent(parsed.username),
+    password: decodeURIComponent(parsed.password),
+    database: parsed.pathname.slice(1) || "postgres",
+    sslMode,
+  };
 }
 
-const host = env("PGHOST");
-const port = Number(env("PGPORT"));
-const user = env("PGUSER");
-const region = env("AWS_REGION");
-const roleArn = env("AWS_ROLE_ARN");
+function getPoolConfig() {
+  if (process.env.DATABASE_URL) {
+    const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+    return {
+      host: parsed.host,
+      port: parsed.port,
+      user: parsed.user,
+      password: parsed.password,
+      database: parsed.database,
+      ssl: parsed.sslMode === "disable" ? false : { rejectUnauthorized: false },
+      max: 20,
+    };
+  }
 
-const signer = new Signer({
-  hostname: host,
-  port,
-  username: user,
-  region,
-  credentials: awsCredentialsProvider({
-    roleArn,
-    clientConfig: { region },
-  }),
-});
+  if (process.env.PGHOST) {
+    const host = process.env.PGHOST!;
+    const port = Number(process.env.PGPORT!);
+    const user = process.env.PGUSER!;
+    const region = process.env.AWS_REGION!;
+    const roleArn = process.env.AWS_ROLE_ARN!;
 
-const sslMode = process.env.PGSSLMODE;
-const ssl = sslMode === "disable" ? false : { rejectUnauthorized: false };
+    const signer = new Signer({
+      hostname: host,
+      port,
+      username: user,
+      region,
+      credentials: awsCredentialsProvider({
+        roleArn,
+        clientConfig: { region },
+      }),
+    });
 
-export const pool = new Pool({
-  host,
-  user,
-  database: process.env.PGDATABASE || "postgres",
-  password: () => signer.getAuthToken(),
-  port,
-  ssl,
-  max: 20,
-});
+    return {
+      host,
+      port,
+      user,
+      database: process.env.PGDATABASE || "postgres",
+      password: () => signer.getAuthToken(),
+      ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+      max: 20,
+    };
+  }
+
+  throw new Error("No database configuration found. Set DATABASE_URL or PGHOST/PGPORT/PGUSER/AWS_REGION/AWS_ROLE_ARN.");
+}
+
+export const pool = new Pool(getPoolConfig());
 
 export async function query(sql: string, args: unknown[]) {
   return pool.query(sql, args);

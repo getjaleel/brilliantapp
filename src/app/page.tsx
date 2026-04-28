@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { query } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function Dashboard() {
   const projectsResult = await query(
     "SELECT * FROM \"Project\" LIMIT 1",
