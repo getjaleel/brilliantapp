@@ -25,7 +25,8 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
       client: true,
       phases: { orderBy: { order: 'asc' } },
       risks: true,
-      controls: true
+      controls: true,
+      artefacts: true
     }
   });
 
