@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +13,9 @@ import {
   ArrowRight,
   BrainCircuit
 } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
 export default async function CompliancePage({ params }: { params: { projectId: string } }) {
   const { projectId } = params;

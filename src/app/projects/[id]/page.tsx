@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,9 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
 export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const { id } = params;
