@@ -13,39 +13,89 @@ import { query } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const projectsResult = await query(
-    "SELECT * FROM \"Project\" LIMIT 1",
-    []
-  );
+  let project: any = null;
+  let phases: any[] = [];
+  let risks: any[] = [];
+  let controls: any[] = [];
+  let dbError: string | null = null;
 
-  const project = projectsResult.rows[0];
+  try {
+    const projectsResult = await query(
+      'SELECT * FROM "Project" LIMIT 1',
+      []
+    );
+    project = projectsResult.rows[0];
+
+    if (project) {
+      const phasesResult = await query(
+        'SELECT * FROM "EngagementPhase" WHERE "projectId" = $1 ORDER BY "order" ASC',
+        [project.id]
+      );
+      phases = phasesResult.rows;
+
+      const risksResult = await query(
+        'SELECT * FROM "Risk" WHERE "projectId" = $1',
+        [project.id]
+      );
+      risks = risksResult.rows;
+
+      const controlsResult = await query(
+        'SELECT * FROM "Control" WHERE "projectId" = $1',
+        [project.id]
+      );
+      controls = controlsResult.rows;
+    }
+  } catch (err: any) {
+    dbError = err.message || String(err);
+  }
+
+  if (dbError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 max-w-xl mx-auto">
+        <div className="p-6 rounded-xl border border-red-200 bg-red-50 text-red-800">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-semibold">Database Setup Required</span>
+          </div>
+          <div className="text-sm font-mono bg-white p-3 rounded border border-red-100 mb-4">
+            {dbError}
+          </div>
+          <p className="text-sm">
+            The RDS database is connected but the app schema is not yet created.
+          </p>
+          <div className="mt-4 flex gap-3">
+            <a
+              href="/api/setup-db"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+            >
+              Run Setup →
+            </a>
+            <a
+              href="/status"
+              className="px-4 py-2 border border-red-300 hover:bg-red-100 rounded-md text-sm transition-colors"
+            >
+              Check Status
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <h2 className="text-2xl font-bold">No Active Project</h2>
         <p className="text-slate-500">Create a project to start the navigator.</p>
+        <a
+          href="/api/setup-db"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+        >
+          Seed Sample Data →
+        </a>
       </div>
     );
   }
-
-  const phasesResult = await query(
-    "SELECT * FROM \"EngagementPhase\" WHERE \"projectId\" = $1 ORDER BY \"order\" ASC",
-    [project.id]
-  );
-  const phases = phasesResult.rows;
-
-  const risksResult = await query(
-    "SELECT * FROM \"Risk\" WHERE \"projectId\" = $1",
-    [project.id]
-  );
-  const risks = risksResult.rows;
-
-  const controlsResult = await query(
-    "SELECT * FROM \"Control\" WHERE \"projectId\" = $1",
-    [project.id]
-  );
-  const controls = controlsResult.rows;
 
   const completedPhases = phases.filter((p: any) => p.status === 'COMPLETED').length;
   const progress = phases.length > 0 ? (completedPhases / phases.length) * 100 : 0;
