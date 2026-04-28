@@ -4,8 +4,9 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:/tmp/navigator_dev.db"
+  url      = "file:/Users/jaleelmohammad/navigator_dev.db"
 }
+
 
 model User {
   id            String    @id @default(cuid())
