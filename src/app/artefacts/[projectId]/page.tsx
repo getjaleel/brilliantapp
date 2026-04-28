@@ -36,6 +36,12 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
   );
   const artefacts = artefactsResult.rows;
 
+  const templatesResult = await query(
+    'SELECT id, name, category FROM "DocumentTemplate" ORDER BY category, name',
+    []
+  );
+  const templates = templatesResult.rows;
+
   return (
     <div className="space-y-8">
       <header className="flex justify-between items-center">
@@ -67,12 +73,17 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
                     <SelectValue placeholder="Choose artefact type..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="principles">Architecture Principles</SelectItem>
-                    <SelectItem value="adr">Architecture Decision Record (ADR)</SelectItem>
-                    <SelectItem value="risk_reg">Risk Register</SelectItem>
-                    <SelectItem value="current_state">Current State Summary</SelectItem>
-                    <SelectItem value="target_state">Target State Recommendations</SelectItem>
-                    <SelectItem value="exec_summary">Executive Briefing</SelectItem>
+                    {templates.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No templates found
+                      </SelectItem>
+                    ) : (
+                      templates.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -86,6 +97,22 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2">
                 <Sparkles className="w-4 h-4" /> Generate Draft
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Document Templates</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-slate-500">
+                Browse all 35 cybersecurity templates and instantiate them directly.
+              </p>
+              <Link href="/templates">
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  Browse Templates
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

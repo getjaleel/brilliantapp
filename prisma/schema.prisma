@@ -197,3 +197,14 @@ model RoadmapItem {
   dependency  String?
   createdAt   DateTime @default(now())
 }
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  docType     String   // Template, Tracker, Report, Sheet, Policy
+  description String
+  content     String
+  tags        String?
+  createdAt   DateTime @default(now())
+}

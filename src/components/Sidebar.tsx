@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   Map,
   Settings,
-  UserCircle
+  UserCircle,
+  BookOpen
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Projects", href: "/projects", icon: GitBranch },
   { name: "Engagement", href: "/engagement", icon: BrainCircuit },
   { name: "Knowledge", href: "/knowledge", icon: Library },
+  { name: "Templates", href: "/templates", icon: BookOpen },
   { name: "Artefacts", href: "/artefacts", icon: FileText },
   { name: "Compliance", href: "/compliance", icon: ShieldCheck },
   { name: "Roadmap", href: "/roadmap", icon: Map },
