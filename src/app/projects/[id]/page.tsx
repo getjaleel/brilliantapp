@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import RecommendationsPanel from "@/components/RecommendationsPanel";
+import AIPromptLibrary from "@/components/AIPromptLibrary";
 import {
   ChevronLeft,
   CheckCircle2,
@@ -304,6 +305,8 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
 
         <div className="space-y-6">
           <RecommendationsPanel projectId={id} />
+
+          <AIPromptLibrary />
 
           {/* AI Conversation */}
           {messages.length > 0 && (

@@ -354,6 +354,10 @@ async function seedDatabase() {
     { name: "James O'Connor", role: "Policy Admin Business Owner", influence: "Medium", interest: "High" },
     { name: "Priya Nair", role: "Finance Director", influence: "High", interest: "Low" },
     { name: "Tom Bradley", role: "Claims Operations Manager", influence: "Low", interest: "High" },
+    { name: "Dr. Wei Liu", role: "Chief Risk Officer", influence: "High", interest: "High" },
+    { name: "Rachel Adams", role: "Legal Counsel — Privacy", influence: "Medium", interest: "Medium" },
+    { name: "Marcus Johnson", role: "AWS Managed Services Partner Lead", influence: "Medium", interest: "Medium" },
+    { name: "Aisha Patel", role: "Data Engineering Lead", influence: "Low", interest: "High" },
   ];
 
   for (let i = 0; i < stakeholders.length; i++) {
@@ -363,24 +367,64 @@ async function seedDatabase() {
     );
   }
 
-  // ─── AI Conversation ───
-  const convId = "conv_seed_001";
+  // ─── AI Conversations ───
+  const convId1 = "conv_seed_001";
   await query(
     `INSERT INTO "AIConversation" (id, "projectId", mode, "createdAt") VALUES ($1, $2, $3, $4)`,
-    [convId, projectId, "Discovery Assistant", now]
+    [convId1, projectId, "Discovery Assistant", now]
   );
 
-  const messages = [
+  const messages1 = [
     { role: "user", content: "We're starting Current State Assessment. What should we prioritise given our mainframe constraint?" },
     { role: "assistant", content: "Given the 47 undocumented batch interfaces on your Policy Admin core, I recommend this prioritisation:\n\n1. **Interface discovery sprint** (2 weeks): Deploy AWS Mainframe Modernization service to auto-discover COBOL program call graphs and data flow maps.\n\n2. **API-readiness assessment**: Identify the 12 SOAP services with >4s latency — these are highest-value for API Gateway migration.\n\n3. **Data classification audit**: Tag all DB2 tables with APRA sensitivity labels before any cloud replication begins.\n\n4. **Parallel environment**: Stand up AWS Melbourne as mirror for 3-month parallel reconciliation — this satisfies APRA CPS 234 continuity requirements.\n\nWould you like me to generate a detailed sprint plan for the interface discovery?" },
     { role: "user", content: "Yes, and also flag which Essential Eight controls map to each activity." },
     { role: "assistant", content: "## Interface Discovery Sprint Plan\n\n**Week 1–2: Automated Discovery**\n- Deploy AWS Mainframe Modernization (M2) Assessment Tool\n- Run static analysis on all 47 COBOL programs\n- Map CICS transaction IDs to business functions\n\n*Mapped controls:*\n- M4 (User app hardening): M2 tool deployment via hardened AMI\n- M5 (MFA): All M2 console access via AWS IAM Identity Center + YubiKey\n\n**Week 3: API Readiness Scoring**\n- Score each interface on: latency, data volume, error rate, business criticality\n- Shortlist top 5 for API Gateway PoC\n\n*Mapped controls:*\n- M1 (App control): API Gateway request validation + WAF rules\n- M7 (Encryption): TLS 1.3 mandatory for all API traffic\n\n**Week 4: Parallel Environment Standup**\n- Provision Aurora PostgreSQL in ap-southeast-4\n- Configure AWS DMS for one-way replication\n- Run first parallel batch reconciliation\n\n*Mapped controls:*\n- M8 (Backups): AWS Backup cross-region vault with legal hold\n- M6 (PAM): DMS credentials in AWS Secrets Manager with rotation\n\n**Deliverables:**\n- Interface dependency map (visual)\n- API readiness scorecard\n- Essential Eight control mapping matrix\n- Risk-adjusted migration sequence" },
   ];
 
-  for (let i = 0; i < messages.length; i++) {
+  for (let i = 0; i < messages1.length; i++) {
     await query(
       `INSERT INTO "AIMessage" (id, "conversationId", role, content, "createdAt") VALUES ($1, $2, $3, $4, $5)`,
-      [`msg_${i}_seed`, convId, messages[i].role, messages[i].content, now]
+      [`msg1_${i}_seed`, convId1, messages1[i].role, messages1[i].content, now]
+    );
+  }
+
+  // Security-focused AI conversation
+  const convId2 = "conv_seed_002";
+  await query(
+    `INSERT INTO "AIConversation" (id, "projectId", mode, "createdAt") VALUES ($1, $2, $3, $4)`,
+    [convId2, projectId, "Security Reviewer", now]
+  );
+
+  const messages2 = [
+    { role: "user", content: "We discovered 347 admin accounts with standing access to the policy database. What's our exposure and how do we fix it?" },
+    { role: "assistant", content: "## Exposure Analysis\n\n**Critical Finding**: 347 standing admin accounts violates ISM-1501 (least privilege) and APRA CPS 234.33 (privileged access management).\n\n**Risk Scenarios:**\n1. **Compromised credential**: Any of 347 accounts can exfiltrate 3M customer records\n2. **Insider threat**: No session recording = no forensic trail\n3. **APRA audit failure**: Standing access without 4-eyes approval is a direct CPS 234 gap\n\n## Remediation Plan\n\n**Immediate (0-30 days):**\n- Audit all 347 accounts: remove 200+ redundant/duplicate accounts\n- Enforce MFA on all remaining privileged accounts (FIDO2/WebAuthn)\n- Enable session recording via CyberArk for all PROTECTED data access\n\n**Short-term (30-90 days):**\n- Deploy just-in-time elevation: 4-hour max session, manager approval required\n- Implement quarterly access certification by data owners\n- Move all AWS IAM static keys to IAM Roles + STS\n\n**Mapped Controls:**\n- Essential Eight M5 (MFA): Enforce phishing-resistant MFA\n- Essential Eight M6 (PAM): Just-in-time + session recording\n- ISM-1501: Separate admin accounts, 4-eyes approval\n- APRA CPS 234.33: Privileged access monitoring and logging\n\n**Recommended Templates:**\n- Access Rights & Permissions Matrix\n- Cloud Access Control Matrix\n- Privileged Access Management Tracker" },
+    { role: "user", content: "Our third-party vendor risk is also flagged. Only 2 of 8 SaaS providers have SOC 2. How do we close this gap before APRA audit?" },
+    { role: "assistant", content: "## Third-Party Risk Remediation — APRA CPS 234.39\n\n**Current State:** 25% SOC 2 coverage (2/8). APRA CPS 234 requires ongoing monitoring of all material outsourcing.\n\n**60-Day Action Plan:**\n\n**Tier 1 Vendors (DocuSign, Salesforce, Twilio):**\n- Request SOC 2 Type II reports within 14 days\n- If unavailable, mandate ISO 27001 + right-to-audit clause\n- Deploy Vanta/Drata for continuous security posture monitoring\n- Quarterly vendor risk scorecard with CISO review\n\n**Tier 2 Vendors:**\n- Self-assessment questionnaire (SAQ) based on NIST SP 800-171\n- Annual penetration test results or external security review\n- Contractual data breach notification within 24 hours\n\n**Governance:**\n- Add vendor risk to monthly Risk Committee agenda\n- Vendor offboarding checklist: data deletion certificate, access revocation, final risk review\n\n**Recommended Templates:**\n- Information Security Policy Compliance Checklist\n- Third-Party Risk Assessment Matrix\n- Data Breach Notification Log" },
+  ];
+
+  for (let i = 0; i < messages2.length; i++) {
+    await query(
+      `INSERT INTO "AIMessage" (id, "conversationId", role, content, "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+      [`msg2_${i}_seed`, convId2, messages2[i].role, messages2[i].content, now]
+    );
+  }
+
+  // Executive AI conversation
+  const convId3 = "conv_seed_003";
+  await query(
+    `INSERT INTO "AIConversation" (id, "projectId", mode, "createdAt") VALUES ($1, $2, $3, $4)`,
+    [convId3, projectId, "Executive Briefing", now]
+  );
+
+  const messages3 = [
+    { role: "user", content: "Draft a 2-minute board update on our cloud migration security posture for next week's meeting." },
+    { role: "assistant", content: "## Board Update — Cloud Migration Security Posture\n**Duration**: 2 minutes | **Presenter**: Margaret Thompson, CTO\n\n**Opening (15s):**\nOur cloud migration is on track with strong security fundamentals. We have achieved MET status on 6 of 8 Essential Eight controls and are addressing the remaining 2 before Q3.\n\n**Key Achievements (45s):**\n1. **Data Protection**: All PROTECTED data encrypted at rest with HSM-backed KMS. Key rotation automated.\n2. **Identity**: 100% privileged accounts now protected with phishing-resistant MFA (YubiKey).\n3. **Backups**: Immutable cross-region backups operational. Last DR test: RPO 45 minutes.\n4. **Compliance**: ISM-1651 logging and monitoring MET. Splunk ES ingesting 850 sources with 14-day MTTD.\n\n**Risks Requiring Attention (30s):**\n1. **Third-party risk**: Only 25% of SaaS vendors have SOC 2. Remediation plan in place with 60-day deadline.\n2. **Privileged access**: 347 standing admin accounts identified. Down to 147 after cleanup. Zero-trust PAM deployment by Q3.\n\n**Ask (15s):**\nRequest Board approval for $180K investment in Vanta continuous monitoring and CyberArk PAM expansion. This closes our final APRA CPS 234 gaps ahead of Q2 audit.\n\n**Closing (15s):**\nWe remain confident in achieving APRA attestation by October 2026. No material security blockers to migration timeline." },
+  ];
+
+  for (let i = 0; i < messages3.length; i++) {
+    await query(
+      `INSERT INTO "AIMessage" (id, "conversationId", role, content, "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+      [`msg3_${i}_seed`, convId3, messages3[i].role, messages3[i].content, now]
     );
   }
 
@@ -389,6 +433,10 @@ async function seedDatabase() {
     { title: "ADR-001: AWS Aurora PostgreSQL over Amazon RDS Oracle", status: "ACCEPTED", context: "Current data warehouse runs Oracle Exadata 12c (extended support expires Q3 2026). Migration to Aurora PostgreSQL reduces licensing by $420K/year and enables serverless scaling.", decision: "Adopt Aurora PostgreSQL with Babelfish for Oracle compatibility layer. Migrate 80% of stored procedures to PostgreSQL native; retain Babelfish for 20% of complex PL/SQL.", consequences: "Positive: $420K annual savings, auto-scaling, pgvector for AI search. Negative: 6-week migration effort for stored procedures, DBA retraining required." },
     { title: "ADR-002: EKS with Karpenter over ECS Fargate", status: "ACCEPTED", context: "Claims processing requires GPU-accelerated OCR for document ingestion. Fargate lacks GPU support. EKS with Karpenter provides spot instance optimisation and GPU node pools.", decision: "Adopt Amazon EKS with Karpenter autoscaler. Deploy claims service on GPU-enabled node group (g5.xlarge) with spot instance fallback.", consequences: "Positive: 60% compute cost reduction via spot, GPU support for ML inference. Negative: Higher operational complexity — requires certified Kubernetes admin." },
     { title: "ADR-003: Amazon MQ over Amazon MSK for mainframe bridge", status: "PROPOSED", context: "Mainframe uses IBM MQ Series for claims-to-policy sync. MSK (Kafka) offers better throughput but requires protocol translation. Amazon MQ supports native JMS.", decision: "Pending — recommend PoC with both MSK and MQ. MSK for greenfield event streaming; MQ for mainframe bridge with JMS compatibility.", consequences: "Positive: MQ reduces integration risk by 40%. MSK enables future event sourcing pattern. Hybrid approach may be optimal." },
+    { title: "ADR-004: Okta over AWS Cognito for identity federation", status: "ACCEPTED", context: "Current Azure AD + local AD hybrid is complex. AWS Cognito is proprietary. Okta provides cloud-native identity with Australian data residency and stronger MFA capabilities.", decision: "Adopt Okta Workforce Identity Cloud with Australian data residency. Federate Okta to AWS IAM Identity Center for cloud access. Migrate all 47 admin accounts to Okta with FIDO2/WebAuthn.", consequences: "Positive: Single identity pane, Australian data residency, strong MFA. Negative: $180K annual licensing, 3-month migration, user re-enrollment." },
+    { title: "ADR-005: Terraform over CloudFormation for IaC", status: "ACCEPTED", context: "CloudFormation is AWS-only. Terraform supports multi-cloud and has richer module ecosystem. Team already has 2 Terraform-certified engineers.", decision: "Standardise on Terraform with Atlantis for pull-request-driven deployments. Use CloudFormation only for AWS Control Tower landing zone bootstrap.", consequences: "Positive: Multi-cloud portability, 200+ community modules, state locking via S3+DynamoDB. Negative: State file security risk (mitigated by git-secrets + S3 encryption)." },
+    { title: "ADR-006: Data lakehouse over traditional data warehouse", status: "PROPOSED", context: "Current Oracle Exadata data warehouse is expensive and lacks real-time analytics. Lakehouse (S3 + Athena + Iceberg) enables both BI and ML workloads.", decision: "Pending PoC: 3-month trial with 20% of data warehouse workloads. Evaluate query performance, cost, and data governance tooling.", consequences: "Positive: 50% cost reduction, real-time analytics, ML-ready. Negative: SQL compatibility gaps, governance complexity, retraining for 350 analysts." },
+    { title: "ADR-007: Blue-green deployment for critical services", status: "ACCEPTED", context: "Current deployments use in-place updates causing 15-minute downtime during policy admin releases. Blue-green enables zero-downtime with instant rollback.", decision: "Implement blue-green deployment for Policy Admin and Claims Portal using Route 53 weighted routing and Auto Scaling Groups. Argo Rollouts for Kubernetes services.", consequences: "Positive: Zero-downtime releases, instant rollback, canary testing. Negative: 2x infrastructure cost during deployment window (mitigated by spot instances)." },
   ];
 
   for (let i = 0; i < decisions.length; i++) {
@@ -402,18 +450,125 @@ async function seedDatabase() {
   const roadmap = [
     { title: "AWS Landing Zone provisioning", phase: "Short term", priority: "High", dependency: "ADR-001 approved" },
     { title: "Policy Admin API Gateway PoC", phase: "Short term", priority: "High", dependency: "Interface discovery complete" },
+    { title: "Okta identity federation deployment", phase: "Short term", priority: "High", dependency: "ADR-004 approved" },
+    { title: "Terraform Atlantis CI/CD pipeline", phase: "Short term", priority: "Medium", dependency: "ADR-005 approved" },
     { title: "Mainframe JMS bridge to Amazon MQ", phase: "Medium term", priority: "High", dependency: "ADR-003 decision" },
     { title: "Data warehouse Aurora migration", phase: "Medium term", priority: "Medium", dependency: "Landing Zone operational" },
     { title: "Customer portal containerisation (EKS)", phase: "Medium term", priority: "Medium", dependency: "Karpenter cluster stable" },
+    { title: "Blue-green deployment for Policy Admin", phase: "Medium term", priority: "Medium", dependency: "ADR-007 approved" },
+    { title: "Data lakehouse PoC (S3 + Athena)", phase: "Medium term", priority: "Low", dependency: "ADR-006 decision" },
     { title: "Decommission Sydney DC-1", phase: "Long term", priority: "High", dependency: "All Tier 1 workloads migrated and stable for 6 months" },
     { title: "Melbourne DC-2 decommission", phase: "Long term", priority: "Medium", dependency: "DR failover tested quarterly for 12 months" },
     { title: "FinOps cost optimisation programme", phase: "Long term", priority: "Low", dependency: "6 months of AWS billing data" },
+    { title: "APRA CPS 234 Board attestation", phase: "Long term", priority: "High", dependency: "All controls MET + penetration test clean" },
   ];
 
   for (let i = 0; i < roadmap.length; i++) {
     await query(
       `INSERT INTO "RoadmapItem" (id, "projectId", title, phase, priority, dependency, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [`roadmap_${i}_seed`, projectId, roadmap[i].title, roadmap[i].phase, roadmap[i].priority, roadmap[i].dependency, now]
+    );
+  }
+
+  // ─── Second Project: State Government Digital Transformation ───
+  const clientId2 = "client_seed_002";
+  await query(
+    `INSERT INTO "Client" (id, name, industry, "organisationId", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $5)`,
+    [clientId2, "Victoria Department of Transport", "Government & Public Sector", orgId, now]
+  );
+
+  const projectId2 = "proj_seed_002";
+  await query(
+    `INSERT INTO "Project" (id, name, "clientId", description, "businessDrivers", scope, constraints, "regulatoryEnv", "cloudProvider", "securityClass", "targetOutcomes", status, "aiEnabled", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)`,
+    [
+      projectId2,
+      "DoT — Digital Services Platform Modernisation",
+      clientId2,
+      "Modernisation of Victoria's transport licensing, registration, and fine payment platform. Migrate from legacy IBM mainframe to cloud-native microservices on Azure with API-first integration to VicRoads, PTV, and third-party toll operators.",
+      "Reduce citizen transaction time from 45 min to under 5 min | Enable real-time licence status verification for police | Cut operational costs by 35% | Achieve Victorian Protective Data Security Framework (VPDSF) compliance | Support 2M monthly transactions by 2027",
+      "Driver licence renewal, vehicle registration, fine payment, toll account linking, commercial vehicle permits, and infringement appeals.",
+      "Budget: $8.5M over 24 months | Security baseline: PROTECTED | Azure regions: Australia East (Melbourne) and Australia Central (Canberra) only | No offshore development | Accessibility WCAG 2.1 AA mandatory | IBMP mainframe contract expires Dec 2026",
+      "Victorian Protective Data Security Framework (VPDSF), Australian ISM, Privacy Act 1988, Disability Discrimination Act, WCAG 2.1 AA",
+      "Azure",
+      "PROTECTED",
+      "Cloud-native platform blueprint | API integration framework | VPDSF compliance attestation | Citizen mobile app | Executive dashboard | Disaster recovery runbook",
+      "DISCOVERY",
+      true,
+      now,
+    ]
+  );
+
+  const phases2 = [
+    { id: "phase2_1", name: "Discovery & Stakeholder Alignment", order: 1, status: "COMPLETED", purpose: "Map citizen journeys, identify pain points, and align DoT leadership on scope and success metrics" },
+    { id: "phase2_2", name: "Current State Architecture", order: 2, status: "IN_PROGRESS", purpose: "Document IBM mainframe architecture, data models, integration points, and technical debt" },
+    { id: "phase2_3", name: "Target Architecture & Design", order: 3, status: "PENDING", purpose: "Design Azure-native microservices, API gateway, and event-driven integration patterns" },
+    { id: "phase2_4", name: "Security & Compliance Framework", order: 4, status: "PENDING", purpose: "Map VPDSF controls to Azure services, design zero-trust network, and plan penetration testing" },
+    { id: "phase2_5", name: "Implementation Roadmap", order: 5, status: "PENDING", purpose: "Define phased cutover plan, pilot rollout, and full production migration timeline" },
+  ];
+
+  for (const phase of phases2) {
+    await query(
+      `INSERT INTO "EngagementPhase" (id, "projectId", name, "order", status, purpose, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
+      [phase.id, projectId2, phase.name, phase.order, phase.status, phase.purpose, now]
+    );
+  }
+
+  const risks2 = [
+    { title: "IBM mainframe contract cliff", description: "Current IBM Z15 mainframe contract expires Dec 2026 with no renewal option. Migration must be complete 6 months before expiry to allow parallel run and decommission.", impact: "Critical", probability: "High", mitigation: "Fixed-price contract with IBM for 12-month extension at 150% rate | Parallel environment standup by June 2026 | Fallback: IBM Cloud for Z if on-prem not viable" },
+    { title: "Citizen data breach during migration", description: "2.4M driver licence records and 4.1M vehicle registrations must be migrated from IBM Db2 to Azure Cosmos DB. Any misconfiguration could expose PII during ETL.", impact: "Critical", probability: "Medium", mitigation: "AES-256 encryption for all ETL pipelines | Private endpoints only | Data masking for non-prod | Independent penetration test before go-live | Azure Private Link for all data services" },
+    { title: "Accessibility compliance failure", description: "WCAG 2.1 AA is mandatory for all Victorian government digital services. Current vendor has limited accessibility expertise. Risk of audit failure and citizen complaints.", impact: "High", probability: "Medium", mitigation: "Engage accessibility consultant (Vision Australia) for UX review | Automated a11y testing in CI/CD (axe-core, Pa11y) | User testing with disability advocates | Accessibility statement published before launch" },
+    { title: "API vendor lock-in to Azure API Management", description: "Azure API Management is proprietary. Integration with VicRoads and PTV uses different standards. Risk of vendor lock-in and future portability constraints.", impact: "Medium", probability: "Medium", mitigation: "Adopt OpenAPI 3.0 spec for all APIs | Abstract gateway logic behind adapter layer | Evaluate Kong or Apigee as portable alternative in PoC phase" },
+    { title: "Political priority shift", description: "State election in Nov 2026 may shift transport portfolio priorities. New minister may redirect funding or change project scope.", impact: "Medium", probability: "Medium", mitigation: "Bi-monthly steering committee with DoT Secretary | Agile delivery with 3-month funding gates | Clear business case tied to citizen satisfaction metrics | Media-ready executive summary for new ministers" },
+  ];
+
+  for (let i = 0; i < risks2.length; i++) {
+    await query(
+      `INSERT INTO "Risk" (id, "projectId", title, description, impact, probability, mitigation, status, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, 'OPEN', $8, $8)`,
+      [`risk2_${i}_seed`, projectId2, risks2[i].title, risks2[i].description, risks2[i].impact, risks2[i].probability, risks2[i].mitigation, now]
+    );
+  }
+
+  const controls2 = [
+    { name: "Identity and access management", framework: "VPDSF", requirement: "VPDSF-4.1: All access to PROTECTED data requires multi-factor authentication and role-based access control with quarterly recertification.", status: "PARTIAL", evidence: "Azure AD + Conditional Access for DoT staff | Citizen auth via myGov integration planned | Quarterly recertification not yet operational", owner: "DoT CISO Office" },
+    { name: "Encryption of data at rest", framework: "VPDSF", requirement: "VPDSF-5.2: All PROTECTED data encrypted at rest using AES-256 or equivalent. Key management via HSM or Azure Key Vault with Australian residency.", status: "MET", evidence: "Azure Key Vault with HSM-backed keys in Australia East | Cosmos DB automatic encryption | Blob storage with customer-managed keys | Key rotation every 90 days", owner: "Azure Platform Team" },
+    { name: "Network security", framework: "VPDSF", requirement: "VPDSF-6.1: Networks segmented with deny-by-default. DMZ for public-facing services, private subnets for databases and internal APIs.", status: "MET", evidence: "Azure Virtual WAN with hub-spoke topology | NSGs with micro-segmentation | Azure Firewall Premium with IDS/IPS | DDoS Protection Standard enabled", owner: "Network Engineering" },
+    { name: "Logging and monitoring", framework: "VPDSF", requirement: "VPDSF-7.1: Centralised logging of all security events with 7-year retention. Real-time alerting for privileged access and data exfiltration.", status: "PARTIAL", evidence: "Azure Sentinel with 400+ data connectors | 30-day MTTD for critical alerts | SOAR playbooks for 12 common scenarios | Long-term retention via Archive tier", owner: "SOC Team" },
+    { name: "Incident response", framework: "VPDSF", requirement: "VPDSF-8.1: Tested incident response plan with defined roles, communication trees, and regulatory notification to OVIC within 72 hours.", status: "MET", evidence: "IR plan tested quarterly with DoT + DPC + OVIC observers | OVIC notification SLA: 48 hours | CIRT on-call 24/7 via PagerDuty | Post-incident review within 5 business days", owner: "CISO Office" },
+    { name: "Third-party risk management", framework: "VPDSF", requirement: "VPDSF-9.1: Due diligence and ongoing monitoring of all outsourcing arrangements. Right-to-audit and data breach notification clauses mandatory.", status: "NOT_MET", evidence: "Only 1 of 5 critical vendors has completed VPDSF assessment | No continuous monitoring platform | Contract templates being updated with security clauses", owner: "Procurement + Risk" },
+  ];
+
+  for (let i = 0; i < controls2.length; i++) {
+    await query(
+      `INSERT INTO "Control" (id, "projectId", name, framework, requirement, status, evidence, owner, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)`,
+      [`control2_${i}_seed`, projectId2, controls2[i].name, controls2[i].framework, controls2[i].requirement, controls2[i].status, controls2[i].evidence, controls2[i].owner, now]
+    );
+  }
+
+  const stakeholders2 = [
+    { name: "Hon. Melissa Carter", role: "Minister for Transport", influence: "High", interest: "High" },
+    { name: "Graham Holloway", role: "DoT Secretary", influence: "High", interest: "Medium" },
+    { name: "Dr. Amara Okafor", role: "Chief Information Security Officer", influence: "High", interest: "High" },
+    { name: "Leo Tanaka", role: "Director of Digital Services", influence: "Medium", interest: "High" },
+    { name: "Simone Reynolds", role: "Citizen Experience Lead", influence: "Medium", interest: "High" },
+    { name: "Rajesh Kapoor", role: "IBM Mainframe Programme Manager", influence: "Medium", interest: "Medium" },
+  ];
+
+  for (let i = 0; i < stakeholders2.length; i++) {
+    await query(
+      `INSERT INTO "Stakeholder" (id, "projectId", name, role, influence, interest, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [`stakeholder2_${i}_seed`, projectId2, stakeholders2[i].name, stakeholders2[i].role, stakeholders2[i].influence, stakeholders2[i].interest, now]
+    );
+  }
+
+  const artefacts2 = [
+    { name: "Citizen Journey Map — Licence Renewal", type: "Current State Summary", content: "## Citizen Journey: Driver Licence Renewal\n\n### Current Pain Points\n1. **45-minute average transaction time** — citizens queue at VicRoads centres\n2. **3 separate systems** — licence lookup, payment, and photo capture not integrated\n3. **No digital identity verification** — must present physical documents in person\n4. **Paper-based reminder letters** — 12% bounce rate due to address changes\n\n### Target State\n- **5-minute digital renewal** via myGov-linked mobile app\n- **Real-time identity verification** via myGovID + liveness detection\n- **Push notification reminders** 30 days before expiry\n- **Digital licence wallet** accepted by police and licensed venues\n\n### Business Case\n- $4.2M annual savings from reduced counter staff\n- 85% citizen satisfaction target (current: 62%)\n- 40% reduction in paper consumption" },
+    { name: "VPDSF Control Gap Analysis", type: "Compliance Gap Analysis", content: "## VPDSF Control Gap Analysis\n\n### Scope\nVictorian Protective Data Security Framework (VPDSF) applies to all PROTECTED data handling by DoT Digital Services Platform.\n\n### Assessment Method\nSelf-assessment against VPDSF 18 security standards plus independent audit by Victorian Auditor-General's Office.\n\n### Gap Heatmap\n| Standard | Status | Gap | Remediation | Owner | Due Date |\n|----------|--------|-----|-------------|-------|----------|\n| 4.1 IAM | PARTIAL | No citizen MFA | myGov integration + Azure AD B2C | Leo Tanaka | Aug 2026 |\n| 5.2 Encryption | MET | None | — | Dr. Okafor | — |\n| 6.1 Network | MET | None | — | Network Team | — |\n| 7.1 Logging | PARTIAL | 30-day MTTD target 14 days | Sentinel SOAR enhancement | SOC Team | Jul 2026 |\n| 8.1 IR | MET | None | — | CISO Office | — |\n| 9.1 Third-party | NOT_MET | 4 vendors incomplete | Vanta deployment + contract updates | Procurement | Sep 2026 |\n\n### Overall Maturity: 2.8 / 4.0 (Target: 3.5 by Dec 2026)" },
+  ];
+
+  for (let i = 0; i < artefacts2.length; i++) {
+    await query(
+      `INSERT INTO "Artefact" (id, "projectId", name, type, content, version, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
+      [`artefact2_${i}_seed`, projectId2, artefacts2[i].name, artefacts2[i].type, artefacts2[i].content, 1, now]
     );
   }
 

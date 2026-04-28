@@ -10,7 +10,8 @@ import {
   Map,
   Settings,
   UserCircle,
-  BookOpen
+  BookOpen,
+  Wand2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Templates", href: "/templates", icon: BookOpen },
   { name: "Artefacts", href: "/artefacts", icon: FileText },
   { name: "Compliance", href: "/compliance", icon: ShieldCheck },
+  { name: "AI Tools", href: "/tools", icon: Wand2 },
   { name: "Roadmap", href: "/roadmap", icon: Map },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
