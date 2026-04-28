@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Signer } from "@aws-sdk/rds-signer";
-import { awsCredentialsProvider } from "@vercel/functions/oidc";
+import { awsCredentialsProvider } from "@vercel/oidc-aws-credentials-provider";
 
 async function buildIamDatabaseUrl(): Promise<string> {
   const host = process.env.PGHOST!;

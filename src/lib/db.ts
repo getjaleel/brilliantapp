@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { Signer } from "@aws-sdk/rds-signer";
-import { awsCredentialsProvider } from "@vercel/functions/oidc";
+import { awsCredentialsProvider } from "@vercel/oidc-aws-credentials-provider";
 import { attachDatabasePool } from "@vercel/functions";
 
 function parseDatabaseUrl(url: string) {
