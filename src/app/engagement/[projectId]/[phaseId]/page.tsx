@@ -16,8 +16,10 @@ import {
   ArrowLeft,
   Save,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  PlusCircle
 } from "lucide-react";
+import Link from "next/link";
 
 const prisma = new PrismaClient();
 
@@ -38,11 +40,12 @@ export default async function PhaseExecutionPage({ params }: { params: { project
     <div className="space-y-8">
       <header className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" className="gap-2" asChild>
-            <Link href={`/projects/${projectId}`}>
-              <ArrowLeft className="w-4 h-4" /> Back to Project
-            </Link>
-          </Button>
+          <Link
+            href={`/projects/${projectId}`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Project
+          </Link>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{phase.name}</h1>
             <p className="text-slate-500">{phase.purpose}</p>
@@ -170,6 +173,3 @@ export default async function PhaseExecutionPage({ params }: { params: { project
     </div>
   );
 }
-
-function PlusCircle(props: any) { return <div className="w-4 h-4 bg-slate-400 rounded-full" {...props} />; }
-function Link(props: any) { return <a {...props} />; }
