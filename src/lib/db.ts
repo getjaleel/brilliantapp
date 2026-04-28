@@ -1,6 +1,5 @@
 import { Pool } from "pg";
 import { Signer } from "@aws-sdk/rds-signer";
-import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
 function parseDatabaseUrl(url: string) {
   const parsed = new URL(url);
@@ -15,32 +14,42 @@ function parseDatabaseUrl(url: string) {
   };
 }
 
+async function getIamCredentials() {
+  // On Vercel: use OIDC token
+  if (process.env.VERCEL) {
+    const { awsCredentialsProvider } = await import("@vercel/functions/oidc");
+    return awsCredentialsProvider({
+      roleArn: process.env.AWS_ROLE_ARN!,
+      clientConfig: { region: process.env.AWS_REGION! },
+    });
+  }
+  // Local: AWS SDK uses default credential chain (~/.aws/credentials or env vars)
+  return undefined;
+}
+
 function getPoolConfig() {
-  // Prefer IAM auth when AWS_ROLE_ARN is set (Vercel/RDS setup)
   if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
     const host = process.env.PGHOST!;
     const port = Number(process.env.PGPORT!);
     const user = process.env.PGUSER!;
     const region = process.env.AWS_REGION!;
-    const roleArn = process.env.AWS_ROLE_ARN!;
-
-    const signer = new Signer({
-      hostname: host,
-      port,
-      username: user,
-      region,
-      credentials: awsCredentialsProvider({
-        roleArn,
-        clientConfig: { region },
-      }),
-    });
 
     return {
       host,
       port,
       user,
       database: process.env.PGDATABASE || "postgres",
-      password: () => signer.getAuthToken(),
+      password: async () => {
+        const credentials = await getIamCredentials();
+        const signer = new Signer({
+          hostname: host,
+          port,
+          username: user,
+          region,
+          credentials,
+        });
+        return signer.getAuthToken();
+      },
       ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
       max: 20,
     };
