@@ -2,13 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import RecommendationsPanel from "@/components/RecommendationsPanel";
 import {
   ChevronLeft,
   CheckCircle2,
   Circle,
   CircleDashed,
   FileText,
-  BrainCircuit,
   ArrowRight,
   AlertTriangle,
   ShieldCheck,
@@ -303,27 +303,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
         </div>
 
         <div className="space-y-6">
-          {/* AI Advisor */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-md font-semibold flex items-center gap-2">
-                <BrainCircuit className="w-5 h-5 text-purple-500" />
-                AI Advisor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-xs">
-                <div className="text-blue-400 mb-2">Analysis:</div>
-                <div className="text-slate-300 leading-relaxed italic">
-                  Based on the current phase ({phases.find((p: any) => p.status === 'IN_PROGRESS')?.name || phases[0]?.name}), I recommend documenting the current state networking topology before proceeding to requirements.
-                </div>
-              </div>
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2">
-                <BrainCircuit className="w-4 h-4" />
-                Open AI Chat
-              </Button>
-            </CardContent>
-          </Card>
+          <RecommendationsPanel projectId={id} />
 
           {/* AI Conversation */}
           {messages.length > 0 && (
