@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,29 +12,49 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  const project = await prisma.project.findUnique({
-    where: { id },
-    include: {
-      client: true,
-      phases: { orderBy: { order: 'asc' } },
-      risks: true,
-      controls: true,
-      artefacts: true
-    }
-  });
+
+  const projectResult = await query(
+    'SELECT p.*, c.name as "clientName" FROM "Project" p JOIN "Client" c ON p."clientId" = c.id WHERE p.id = $1',
+    [id]
+  );
+  const project = projectResult.rows[0];
 
   if (!project) {
     return <div className="p-8 text-center">Project not found.</div>;
   }
 
-  const completedPhases = project.phases.filter(p => p.status === 'COMPLETED').length;
-  const progress = project.phases.length > 0 ? (completedPhases / project.phases.length) * 100 : 0;
+  const phasesResult = await query(
+    'SELECT * FROM "EngagementPhase" WHERE "projectId" = $1 ORDER BY "order" ASC',
+    [id]
+  );
+  const phases = phasesResult.rows;
+
+  const risksResult = await query(
+    'SELECT * FROM "Risk" WHERE "projectId" = $1',
+    [id]
+  );
+  const risks = risksResult.rows;
+
+  const controlsResult = await query(
+    'SELECT * FROM "Control" WHERE "projectId" = $1',
+    [id]
+  );
+  const controls = controlsResult.rows;
+
+  const artefactsResult = await query(
+    'SELECT * FROM "Artefact" WHERE "projectId" = $1 ORDER BY "createdAt" DESC',
+    [id]
+  );
+  const artefacts = artefactsResult.rows;
+
+  const completedPhases = phases.filter((p: any) => p.status === 'COMPLETED').length;
+  const progress = phases.length > 0 ? (completedPhases / phases.length) * 100 : 0;
 
   return (
     <div className="space-y-8">
@@ -46,7 +65,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
           </Link>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-            <p className="text-slate-500">{project.client.name} • {project.status}</p>
+            <p className="text-slate-500">{project.clientName} • {project.status}</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -79,7 +98,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                   </div>
                   <div>
                     <div className="text-xs text-slate-500">Active Risks</div>
-                    <div className="text-lg font-bold">{project.risks.length}</div>
+                    <div className="text-lg font-bold">{risks.length}</div>
                   </div>
                 </div>
                 <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-3">
@@ -88,7 +107,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                   </div>
                   <div>
                     <div className="text-xs text-slate-500">Controls Met</div>
-                    <div className="text-lg font-bold">{project.controls.filter(c => c.status === 'MET').length} / {project.controls.length}</div>
+                    <div className="text-lg font-bold">{controls.filter((c: any) => c.status === 'MET').length} / {controls.length}</div>
                   </div>
                 </div>
               </div>
@@ -101,7 +120,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {project.phases.map((phase) => (
+                {phases.map((phase: any) => (
                   <div
                     key={phase.id}
                     className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer group"
@@ -142,7 +161,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
               <div className="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-xs">
                 <div className="text-blue-400 mb-2">Analysis:</div>
                 <div className="text-slate-300 leading-relaxed italic">
-                  "Based on the current phase ({project.phases[0]?.name}), I recommend documenting the current state networking topology before proceeding to requirements."
+                  "Based on the current phase ({phases[0]?.name}), I recommend documenting the current state networking topology before proceeding to requirements."
                 </div>
               </div>
               <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2">
@@ -160,10 +179,10 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {project.artefacts.length === 0 ? (
+              {artefacts.length === 0 ? (
                 <p className="text-xs text-slate-500 italic">No artefacts generated yet.</p>
               ) : (
-                project.artefacts.map(art => (
+                artefacts.map((art: any) => (
                   <div key={art.id} className="flex items-center justify-between p-2 rounded-lg border border-slate-100 text-xs hover:bg-slate-50 cursor-pointer">
                     <span className="font-medium">{art.name}</span>
                     <Badge variant="outline" className="text-[10px]">{art.type}</Badge>
@@ -178,6 +197,5 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
   );
 }
 
-// Dummy components to avoid lucide import issues in some environments
 function AlertTriangle(props: any) { return <div className="w-4 h-4 bg-red-500 rounded-full" {...props} />; }
 function ShieldCheck(props: any) { return <div className="w-4 h-4 bg-green-500 rounded-full" {...props} />; }

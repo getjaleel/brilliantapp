@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,18 +18,21 @@ import {
   PlusCircle
 } from "lucide-react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function PhaseExecutionPage({ params }: { params: { projectId: string; phaseId: string } }) {
   const { projectId, phaseId } = params;
 
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
-  const phase = await prisma.engagementPhase.findUnique({
-    where: { id: phaseId },
-    include: { tasks: true }
-  });
+  const projectResult = await query('SELECT * FROM "Project" WHERE id = $1', [projectId]);
+  const project = projectResult.rows[0];
+
+  const phaseResult = await query('SELECT * FROM "EngagementPhase" WHERE id = $1', [phaseId]);
+  const phase = phaseResult.rows[0];
+
+  const tasksResult = await query('SELECT * FROM "PhaseTask" WHERE "phaseId" = $1 ORDER BY "createdAt" ASC', [phaseId]);
+  const tasks = tasksResult.rows;
 
   if (!project || !phase) {
     return <div className="p-8 text-center">Project or Phase not found.</div>;
@@ -66,7 +68,7 @@ export default async function PhaseExecutionPage({ params }: { params: { project
               <CardTitle className="text-lg font-semibold">Phase Requirements & Tasks</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {phase.tasks.map((task) => (
+              {tasks.map((task: any) => (
                 <div key={task.id} className="flex items-start gap-4 p-4 rounded-xl border border-slate-100 bg-white hover:border-blue-200 transition-colors">
                   <Checkbox
                     checked={task.isCompleted}
@@ -125,7 +127,7 @@ export default async function PhaseExecutionPage({ params }: { params: { project
               <div className="bg-slate-800 p-4 rounded-lg font-mono text-xs space-y-3 border border-slate-700">
                 <div className="text-blue-400">assistant:</div>
                 <div className="text-slate-300 italic leading-relaxed">
-                  "I've analyzed the project context. For this {phase.name} phase, you should prioritize identifying the 'Shadow IT' landscape and any legacy dependencies that could block the target architecture."
+                  "I&apos;ve analyzed the project context. For this {phase.name} phase, you should prioritize identifying the &apos;Shadow IT&apos; landscape and any legacy dependencies that could block the target architecture."
                 </div>
               </div>
 

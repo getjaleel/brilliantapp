@@ -4,18 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BrainCircuit, ChevronRight, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectEngagementPage({ params }: { params: { projectId: string } }) {
   const { projectId } = params;
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: { phases: { orderBy: { order: 'asc' } } }
-  });
+
+  const projectResult = await query(
+    'SELECT * FROM "Project" WHERE id = $1',
+    [projectId]
+  );
+  const project = projectResult.rows[0];
 
   if (!project) return <div>Project not found</div>;
+
+  const phasesResult = await query(
+    'SELECT * FROM "EngagementPhase" WHERE "projectId" = $1 ORDER BY "order" ASC',
+    [projectId]
+  );
+  const phases = phasesResult.rows;
 
   return (
     <div className="space-y-8">
@@ -36,7 +44,7 @@ export default async function ProjectEngagementPage({ params }: { params: { proj
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-4">
-          {project.phases.map((phase) => (
+          {phases.map((phase: any) => (
             <Card key={phase.id} className="group hover:border-blue-300 transition-all cursor-pointer">
               <CardContent className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -72,7 +80,7 @@ export default async function ProjectEngagementPage({ params }: { params: { proj
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-xs font-mono text-slate-400 italic leading-relaxed">
-                "Based on current progress, the 'Current State Assessment' is the critical path. Ensure all technical diagrams are validated by the client's lead engineer before moving to Target Architecture."
+                "Based on current progress, the '{phases.find((p: any) => p.status === 'IN_PROGRESS')?.name || 'Current State Assessment'}' is the critical path. Ensure all technical diagrams are validated by the client's lead engineer before moving to Target Architecture."
               </div>
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-1">
                 Ask AI for Next Steps

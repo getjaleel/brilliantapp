@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   ShieldCheck,
@@ -13,23 +12,31 @@ import {
   ArrowRight,
   BrainCircuit
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function CompliancePage({ params }: { params: { projectId: string } }) {
   const { projectId } = params;
-  const controls = await prisma.control.findMany({
-    where: { projectId },
-    orderBy: { name: 'asc' }
-  });
+
+  const projectResult = await query('SELECT * FROM "Project" WHERE id = $1', [projectId]);
+  const project = projectResult.rows[0];
+
+  const controlsResult = await query(
+    'SELECT * FROM "Control" WHERE "projectId" = $1 ORDER BY name ASC',
+    [projectId]
+  );
+  const controls = controlsResult.rows;
 
   return (
     <div className="space-y-8">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Audit & Compliance Tracker</h1>
-          <p className="text-slate-500">Map project controls to government frameworks (ISM, PSPF, Essential Eight).</p>
+          <h1 className="text-3xl font-bold tracking-tight">Audit &amp; Compliance Tracker</h1>
+          <p className="text-slate-500">
+            {project ? `Mapping controls for ${project.name}.` : "Map project controls to government frameworks (ISM, PSPF, Essential Eight)."}
+          </p>
         </div>
         <Button className="gap-2">
           <PlusCircle className="w-4 h-4" /> Add Control
@@ -67,7 +74,7 @@ export default async function CompliancePage({ params }: { params: { projectId: 
                   </td>
                 </tr>
               ) : (
-                controls.map((control) => (
+                controls.map((control: any) => (
                   <tr key={control.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4 font-medium text-slate-900">{control.name}</td>
                     <td className="px-6 py-4">
@@ -121,7 +128,7 @@ export default async function CompliancePage({ params }: { params: { projectId: 
         </CardHeader>
         <CardContent>
           <div className="text-sm text-blue-800 leading-relaxed">
-            "I've analyzed your currently met controls. There is a significant gap in <strong>Privileged Access Management</strong> relative to the Essential Eight Level 2 requirements. I recommend implementing a separate administrative account strategy."
+            &quot;I&apos;ve analyzed your currently met controls. There is a significant gap in <strong>Privileged Access Management</strong> relative to the Essential Eight Level 2 requirements. I recommend implementing a separate administrative account strategy.&quot;
           </div>
           <Button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-1">
             Generate Gap Analysis Report

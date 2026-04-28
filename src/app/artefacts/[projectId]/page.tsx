@@ -1,10 +1,16 @@
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   FileText,
   Sparkles,
@@ -13,23 +19,31 @@ import {
   BrainCircuit,
   Trash2
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function ArtefactsPage({ params }: { params: { projectId: string } }) {
   const { projectId } = params;
-  const artefacts = await prisma.artefact.findMany({
-    where: { projectId },
-    orderBy: { createdAt: 'desc' }
-  });
+
+  const projectResult = await query('SELECT * FROM "Project" WHERE id = $1', [projectId]);
+  const project = projectResult.rows[0];
+
+  const artefactsResult = await query(
+    'SELECT * FROM "Artefact" WHERE "projectId" = $1 ORDER BY "createdAt" DESC',
+    [projectId]
+  );
+  const artefacts = artefactsResult.rows;
 
   return (
     <div className="space-y-8">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Artefact Generator</h1>
-          <p className="text-slate-500">Generate professional architecture deliverables using AI.</p>
+          <p className="text-slate-500">
+            {project ? `Generate professional architecture deliverables for ${project.name}.` : "Generate professional architecture deliverables using AI."}
+          </p>
         </div>
         <Button className="gap-2">
           <PlusCircle className="w-4 h-4" /> Create Manual Artefact
@@ -84,7 +98,7 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
                 <p>No artefacts generated yet for this project.</p>
               </div>
             ) : (
-              artefacts.map((art) => (
+              artefacts.map((art: any) => (
                 <Card key={art.id} className="group hover:border-blue-300 transition-all">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-semibold">{art.name}</CardTitle>
@@ -92,10 +106,10 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-xs text-slate-500 line-clamp-3 font-mono bg-slate-50 p-2 rounded border">
-                      {art.content.substring(0, 150)}...
+                      {art.content?.substring(0, 150)}...
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-slate-400">v{art.version} • {new Date(art.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[10px] text-slate-400">v{art.version} &bull; {new Date(art.createdAt).toLocaleDateString()}</span>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1">
                           <Download className="w-3 h-3" /> PDF
@@ -115,7 +129,3 @@ export default async function ArtefactsPage({ params }: { params: { projectId: s
     </div>
   );
 }
-
-// Fixed imports for components
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Link from "next/link";

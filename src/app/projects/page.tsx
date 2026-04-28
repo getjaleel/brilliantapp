@@ -1,20 +1,17 @@
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, CheckCircle2, Circle, ChevronRight } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { PlusCircle, ChevronRight } from "lucide-react";
+import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
-  const projects = await prisma.project.findMany({
-    include: { client: true }
-  });
+  const projectsResult = await query(
+    `SELECT p.*, c.name as "clientName" FROM "Project" p JOIN "Client" c ON p."clientId" = c.id ORDER BY p."createdAt" DESC`,
+    []
+  );
+  const projects = projectsResult.rows;
 
   return (
     <div className="space-y-8">
@@ -30,7 +27,7 @@ export default async function ProjectsPage() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
+        {projects.map((project: any) => (
           <Card key={project.id} className="hover:border-blue-300 transition-colors cursor-pointer group">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -39,7 +36,7 @@ export default async function ProjectsPage() {
                 </CardTitle>
                 <Badge variant="outline">{project.status}</Badge>
               </div>
-              <p className="text-sm text-slate-500">{project.client.name}</p>
+              <p className="text-sm text-slate-500">{project.clientName}</p>
             </CardHeader>
             <CardContent>
               <div className="text-xs text-slate-400 mb-4">
