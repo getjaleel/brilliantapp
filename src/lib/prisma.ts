@@ -9,38 +9,26 @@ async function buildIamDatabaseUrl(): Promise<string> {
   const region = process.env.AWS_REGION!;
   const database = process.env.PGDATABASE || "postgres";
 
-  let token: string;
+  const credentials = awsCredentialsProvider({
+    roleArn: process.env.AWS_ROLE_ARN!,
+    clientConfig: { region },
+  });
 
-  if (process.env.VERCEL && process.env.AWS_ROLE_ARN) {
-    const credentials = awsCredentialsProvider({
-      roleArn: process.env.AWS_ROLE_ARN,
-      clientConfig: { region },
-    });
-    const signer = new Signer({
-      hostname: host,
-      port,
-      username: user,
-      region,
-      credentials,
-    });
-    token = await signer.getAuthToken();
-  } else if (process.env.AWS_ROLE_ARN) {
-    const signer = new Signer({
-      hostname: host,
-      port,
-      username: user,
-      region,
-    });
-    token = await signer.getAuthToken();
-  } else {
-    throw new Error("AWS_ROLE_ARN required for IAM auth");
-  }
+  const signer = new Signer({
+    hostname: host,
+    port,
+    username: user,
+    region,
+    credentials,
+  });
 
+  const token = await signer.getAuthToken();
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(token)}@${host}:${port}/${database}?sslmode=require`;
 }
 
 async function ensureDatabaseUrl() {
   if (process.env.DATABASE_URL) return;
+
   if (process.env.PGHOST && process.env.PGPASSWORD) {
     const host = process.env.PGHOST;
     const port = process.env.PGPORT || "5432";
@@ -52,10 +40,12 @@ async function ensureDatabaseUrl() {
     process.env.DATABASE_URL = `postgresql://${encodeURIComponent(user!)}:${encodeURIComponent(password)}@${host}:${port}/${database}${ssl}`;
     return;
   }
+
   if (process.env.PGHOST && process.env.AWS_ROLE_ARN) {
     process.env.DATABASE_URL = await buildIamDatabaseUrl();
     return;
   }
+
   throw new Error("No database config. Set DATABASE_URL or PGHOST+PGPASSWORD or PGHOST+AWS_ROLE_ARN.");
 }
 

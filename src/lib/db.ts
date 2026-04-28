@@ -16,32 +16,21 @@ function parseDatabaseUrl(url: string) {
   };
 }
 
-function createSigner(credentials?: any) {
-  const host = process.env.PGHOST!;
-  const port = Number(process.env.PGPORT || "5432");
-  const user = process.env.PGUSER!;
-  const region = process.env.AWS_REGION!;
-
-  const config: any = {
-    hostname: host,
-    port,
-    username: user,
-    region,
-  };
-  if (credentials) config.credentials = credentials;
-
-  return new Signer(config);
-}
-
 function getPool() {
-  // 1. Vercel runtime: OIDC + attachDatabasePool
-  if (process.env.VERCEL && process.env.AWS_ROLE_ARN && process.env.PGHOST) {
-    const signer = createSigner(
-      awsCredentialsProvider({
-        roleArn: process.env.AWS_ROLE_ARN,
-        clientConfig: { region: process.env.AWS_REGION! },
-      })
-    );
+  // 1. IAM auth via OIDC (works both on Vercel and locally after env pull)
+  if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
+    const credentials = awsCredentialsProvider({
+      roleArn: process.env.AWS_ROLE_ARN,
+      clientConfig: { region: process.env.AWS_REGION! },
+    });
+
+    const signer = new Signer({
+      hostname: process.env.PGHOST,
+      port: Number(process.env.PGPORT || "5432"),
+      username: process.env.PGUSER!,
+      region: process.env.AWS_REGION!,
+      credentials,
+    });
 
     const pool = new Pool({
       host: process.env.PGHOST,
@@ -58,30 +47,11 @@ function getPool() {
       max: 20,
     });
 
-    attachDatabasePool(pool);
+    if (process.env.VERCEL) attachDatabasePool(pool);
     return pool;
   }
 
-  // 2. Local/AWS default credential chain
-  if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
-    const signer = createSigner();
-    return new Pool({
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT || "5432"),
-      user: process.env.PGUSER,
-      database: process.env.PGDATABASE || "postgres",
-      password: ((cb: (err: Error | null, password: string) => void) => {
-        signer
-          .getAuthToken()
-          .then((token) => cb(null, token))
-          .catch((err) => cb(err as Error, ""));
-      }) as any,
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-    });
-  }
-
-  // 3. Explicit PGHOST + PGPASSWORD
+  // 2. Explicit password auth
   if (process.env.PGHOST && process.env.PGPASSWORD) {
     return new Pool({
       host: process.env.PGHOST,
@@ -97,7 +67,7 @@ function getPool() {
     });
   }
 
-  // 4. DATABASE_URL fallback
+  // 3. DATABASE_URL fallback
   if (process.env.DATABASE_URL) {
     const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
     return new Pool({
