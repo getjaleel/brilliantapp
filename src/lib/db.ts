@@ -16,20 +16,8 @@ function parseDatabaseUrl(url: string) {
 }
 
 function getPoolConfig() {
-  if (process.env.DATABASE_URL) {
-    const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
-    return {
-      host: parsed.host,
-      port: parsed.port,
-      user: parsed.user,
-      password: parsed.password,
-      database: parsed.database,
-      ssl: parsed.sslMode === "disable" ? false : { rejectUnauthorized: false },
-      max: 20,
-    };
-  }
-
-  if (process.env.PGHOST) {
+  // Prefer IAM auth when AWS_ROLE_ARN is set (Vercel/RDS setup)
+  if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
     const host = process.env.PGHOST!;
     const port = Number(process.env.PGPORT!);
     const user = process.env.PGUSER!;
@@ -54,6 +42,19 @@ function getPoolConfig() {
       database: process.env.PGDATABASE || "postgres",
       password: () => signer.getAuthToken(),
       ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+      max: 20,
+    };
+  }
+
+  if (process.env.DATABASE_URL) {
+    const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+    return {
+      host: parsed.host,
+      port: parsed.port,
+      user: parsed.user,
+      password: parsed.password,
+      database: parsed.database,
+      ssl: parsed.sslMode === "disable" ? false : { rejectUnauthorized: false },
       max: 20,
     };
   }
