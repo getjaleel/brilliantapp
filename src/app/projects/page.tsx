@@ -11,6 +11,8 @@ import { PlusCircle, CheckCircle2, Circle, ChevronRight } from "lucide-react";
 
 const prisma = new PrismaClient();
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectsPage() {
   const projects = await prisma.project.findMany({
     include: { client: true }
