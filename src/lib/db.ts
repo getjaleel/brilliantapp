@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { Signer } from "@aws-sdk/rds-signer";
+import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
 function parseDatabaseUrl(url: string) {
   const parsed = new URL(url);
@@ -14,47 +15,56 @@ function parseDatabaseUrl(url: string) {
   };
 }
 
-async function getIamCredentials() {
-  // On Vercel: use OIDC token
-  if (process.env.VERCEL) {
-    const { awsCredentialsProvider } = await import("@vercel/functions/oidc");
-    return awsCredentialsProvider({
-      roleArn: process.env.AWS_ROLE_ARN!,
-      clientConfig: { region: process.env.AWS_REGION! },
-    });
-  }
-  // Local: AWS SDK uses default credential chain (~/.aws/credentials or env vars)
-  return undefined;
+function getIamSigner(credentials?: any) {
+  const host = process.env.PGHOST!;
+  const port = Number(process.env.PGPORT!);
+  const user = process.env.PGUSER!;
+  const region = process.env.AWS_REGION!;
+
+  return new Signer({
+    hostname: host,
+    port,
+    username: user,
+    region,
+    ...(credentials ? { credentials } : {}),
+  });
 }
 
 function getPoolConfig() {
-  if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
-    const host = process.env.PGHOST!;
-    const port = Number(process.env.PGPORT!);
-    const user = process.env.PGUSER!;
-    const region = process.env.AWS_REGION!;
-
+  // 1. Vercel runtime: OIDC IAM auth
+  if (process.env.VERCEL && process.env.AWS_ROLE_ARN && process.env.PGHOST) {
+    const signer = getIamSigner(
+      awsCredentialsProvider({
+        roleArn: process.env.AWS_ROLE_ARN,
+        clientConfig: { region: process.env.AWS_REGION! },
+      })
+    );
     return {
-      host,
-      port,
-      user,
+      host: process.env.PGHOST,
+      port: Number(process.env.PGPORT!),
+      user: process.env.PGUSER!,
       database: process.env.PGDATABASE || "postgres",
-      password: async () => {
-        const credentials = await getIamCredentials();
-        const signer = new Signer({
-          hostname: host,
-          port,
-          username: user,
-          region,
-          credentials,
-        });
-        return signer.getAuthToken();
-      },
+      password: () => signer.getAuthToken(),
       ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
       max: 20,
     };
   }
 
+  // 2. Local/AWS env: IAM auth with default credential chain
+  if (process.env.AWS_ROLE_ARN && process.env.PGHOST) {
+    const signer = getIamSigner(); // no credentials = default AWS chain
+    return {
+      host: process.env.PGHOST,
+      port: Number(process.env.PGPORT!),
+      user: process.env.PGUSER!,
+      database: process.env.PGDATABASE || "postgres",
+      password: () => signer.getAuthToken(),
+      ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+      max: 20,
+    };
+  }
+
+  // 3. Fallback to explicit DATABASE_URL
   if (process.env.DATABASE_URL) {
     const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
     return {
@@ -68,7 +78,7 @@ function getPoolConfig() {
     };
   }
 
-  throw new Error("No database configuration found. Set DATABASE_URL or PGHOST/PGPORT/PGUSER/AWS_REGION/AWS_ROLE_ARN.");
+  throw new Error("No database config. Set DATABASE_URL or PGHOST+AWS_ROLE_ARN.");
 }
 
 export const pool = new Pool(getPoolConfig());
