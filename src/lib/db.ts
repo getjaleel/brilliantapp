@@ -2,29 +2,39 @@ import { awsCredentialsProvider } from "@vercel/functions/oidc";
 import { Signer } from "@aws-sdk/rds-signer";
 import { Pool } from "pg";
 
+function env(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing environment variable: ${key}`);
+  return value;
+}
+
+const host = env("PGHOST");
+const port = Number(env("PGPORT"));
+const user = env("PGUSER");
+const region = env("AWS_REGION");
+const roleArn = env("AWS_ROLE_ARN");
+
 const signer = new Signer({
-  hostname: process.env.PGHOST,
-  port: Number(process.env.PGPORT),
-  username: process.env.PGUSER,
-  region: process.env.AWS_REGION,
+  hostname: host,
+  port,
+  username: user,
+  region,
   credentials: awsCredentialsProvider({
-    roleArn: process.env.AWS_ROLE_ARN,
-    clientConfig: { region: process.env.AWS_REGION },
+    roleArn,
+    clientConfig: { region },
   }),
 });
 
-const isLocalhost =
-  !process.env.PGHOST ||
-  process.env.PGHOST === "localhost" ||
-  process.env.PGHOST === "127.0.0.1";
+const sslMode = process.env.PGSSLMODE;
+const ssl = sslMode === "disable" ? false : { rejectUnauthorized: false };
 
 export const pool = new Pool({
-  host: process.env.PGHOST,
-  user: process.env.PGUSER,
+  host,
+  user,
   database: process.env.PGDATABASE || "postgres",
   password: () => signer.getAuthToken(),
-  port: Number(process.env.PGPORT),
-  ssl: isLocalhost ? false : { rejectUnauthorized: false },
+  port,
+  ssl,
   max: 20,
 });
 
