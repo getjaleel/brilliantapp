@@ -13,13 +13,18 @@ const signer = new Signer({
   }),
 });
 
+const isLocalhost =
+  !process.env.PGHOST ||
+  process.env.PGHOST === "localhost" ||
+  process.env.PGHOST === "127.0.0.1";
+
 export const pool = new Pool({
   host: process.env.PGHOST,
   user: process.env.PGUSER,
   database: process.env.PGDATABASE || "postgres",
   password: () => signer.getAuthToken(),
   port: Number(process.env.PGPORT),
-  ssl: { rejectUnauthorized: false },
+  ssl: isLocalhost ? false : { rejectUnauthorized: false },
   max: 20,
 });
 
@@ -27,9 +32,9 @@ export async function query(sql: string, args: unknown[]) {
   return pool.query(sql, args);
 }
 
-export async function withConnection<<TT>(
-  fn: (client: any) => Promise<<TT>,
-): Promise<<TT> {
+export async function withConnection<T>(
+  fn: (client: any) => Promise<T>,
+): Promise<T> {
   const client = await pool.connect();
   try {
     return await fn(client);
