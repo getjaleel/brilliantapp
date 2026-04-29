@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -18,18 +19,19 @@ export default async function KnowledgePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {items.map((item: any) => (
-          <div
-            key={item.id}
-            className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors"
-          >
-            <div className="text-xs font-medium text-blue-600 mb-1">
-              {item.domain}
+          <Link key={item.id} href={`/knowledge/${item.id}`}>
+            <div
+              className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer h-full"
+            >
+              <div className="text-xs font-medium text-blue-600 mb-1">
+                {item.domain}
+              </div>
+              <div className="font-semibold text-sm">{item.title}</div>
+              <div className="text-xs text-slate-500 mt-1 line-clamp-3">
+                {item.description}
+              </div>
             </div>
-            <div className="font-semibold text-sm">{item.title}</div>
-            <div className="text-xs text-slate-500 mt-1 line-clamp-3">
-              {item.description}
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

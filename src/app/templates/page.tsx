@@ -48,6 +48,24 @@ export default async function TemplatesPage() {
         </p>
       </div>
 
+      {templates.length === 0 && (
+        <div className="p-8 rounded-xl border-2 border-dashed border-slate-200 text-center space-y-3">
+          <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
+          <div className="text-sm font-semibold text-slate-600">No templates found</div>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            The DocumentTemplate table is empty. Run{" "}
+            <code className="bg-slate-100 px-1 py-0.5 rounded text-[11px]">/api/setup-db</code>{" "}
+            to create the table and seed all 35 cybersecurity templates.
+          </p>
+          <a
+            href="/api/setup-db"
+            className="inline-block text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Run Setup
+          </a>
+        </div>
+      )}
+
       {categories.map((category) => {
         const items = templates.filter((t: any) => t.category === category);
         return (
